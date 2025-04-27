@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengumuman Kelulusan | MA Nurul Ummah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.3/cdn.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900;1000&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .success-bg {
+            background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+        }
+
+        .failed-bg {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+        }
+
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn ease-in 0.5s forwards;
+        }
+
+        .scale-in {
+            transform: scale(0.9);
+            opacity: 0;
+            animation: scaleIn ease-out 0.5s forwards;
+            animation-delay: 0.1s;
+        }
+
+        .slide-in {
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideIn ease-out 0.5s forwards;
+            animation-delay: 0.2s;
+        }
+
+        @keyframes slideIn {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            background-color: #f8d7da;
+            color: #721c24;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            display: none;
+            max-width: 300px;
+        }
+
+        .notification.show {
+            display: block;
+            animation: slideInRight 0.5s ease forwards;
+        }
+
+        @keyframes slideInRight {
+            0% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center pt-8 px-4">
+    {% if error %}
+    <div id="notification" class="w-full max-w-md mx-auto animate-fade-in">
+        <div class="bg-rose-50 border border-rose-100 text-rose-700 rounded-lg p-4 shadow-sm relative">
+            <div class="flex items-start">
+                <!-- Icon Error -->
+                <div class="flex-shrink-0 bg-rose-500 rounded-full p-2">
+                    <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <!-- Pesan Error -->
+                <div class="ml-3 flex-1 text-sm leading-relaxed">
+                    {{ error }}
+                </div>
+                <!-- Tombol Close -->
+                <button onclick="closeNotification()" class="ml-3 text-rose-600 hover:text-rose-800 transition-colors">
+                    ✕
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function closeNotification() {
+            const notif = document.getElementById('notification');
+            if (notif) {
+                notif.style.display = 'none';
+            }
+        }
+        setTimeout(closeNotification, 5000);
+    </script>
+    {% endif %}
+
+
+    <div class="w-full max-w-md mb-6 animate-fade-in">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center p-5 bg-emerald-50 border-b border-emerald-100">
+                <div class="flex-shrink-0 bg-emerald-500 rounded-full p-2">
+                    <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <h1 class="text-lg font-semibold text-gray-800">MA NURUL UMMAH</h1>
+                    <p class="text-xs text-gray-500">Kotagede, Yogyakarta</p>
+                </div>
+            </div>
+            <div class="px-5 py-4">
+                <h2 class="text-base font-medium text-gray-800">Pengumuman Kelulusan Siswa</h2>
+                <p class="text-xs text-gray-500 mt-1">Tahun Ajaran 2024/2025</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Input -->
+    {% if not hasil %}
+    <div class="w-full max-w-md animate-scale-in">
+        <div class="bg-white rounded-xl shadow-sm p-5">
+            <form action="{{ url_for('cek_kelulusan') }}" method="POST" id="formKelulusan">
+                <div class="mb-4">
+                    <label for="nisn" class="block text-sm font-medium text-gray-700 mb-1">NISN</label>
+                    <input type="text" id="nisn" name="nisn"
+                        class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                        placeholder="Masukkan NISN Anda" required>
+                </div>
+
+                <div class="mb-5">
+                    <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700 mb-1">Tanggal
+                        Lahir</label>
+                    <input type="date" id="tanggal_lahir" name="tanggal_lahir"
+                        class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                        required>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-emerald-500 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">
+                    Cek Kelulusan
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Hasil Kelulusan (Lulus) -->
+    {% if hasil == 'lulus' %}
+    <div id="hasilLulus" class="w-full max-w-md animate-scale-in">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <!-- Header dengan Ikon Sukses -->
+            <div class="bg-emerald-50 border-b border-emerald-100 p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-emerald-500 rounded-full p-2">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-base font-medium text-gray-800">Selamat! Anda Lulus</h2>
+                        <p class="text-xs text-gray-500">Tahun Ajaran 2024/2025</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Siswa -->
+            <div class="px-5 py-4 border-b border-gray-100">
+                <div class="space-y-1">
+                    <p class="text-base font-medium text-gray-800">{{ data.nama }}</p>
+                    <p class="text-sm text-gray-500">{{ data.nisn }}</p>
+                    <p class="text-sm text-gray-500">{{ data.tanggal_lahir_format }}</p>
+                </div>
+            </div>
+
+            <!-- Pesan Kelulusan -->
+            <div class="px-5 py-4 text-sm text-gray-600 leading-relaxed text-justify">
+                <p>Selamat! Anda dinyatakan <span class="font-semibold text-emerald-600">LULUS</span> sebagai siswa MA
+                    Nurul Ummah. Semoga prestasi ini menjadi awal dari kesuksesan Anda di masa depan.</p>
+                <p class="mt-2 text-xs text-gray-500">Silakan mengikuti proses pengambilan ijazah pada tanggal 10-15 Mei
+                    2025.</p>
+            </div>
+
+            <!-- Tombol Kembali -->
+            <div class="px-5 py-4 border-t border-gray-100">
+                <a href="{{ url_for('index') }}"
+                    class="inline-block text-sm text-emerald-500 hover:text-emerald-600 transition-colors">
+                    Kembali ke Halaman Utama
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Hasil Kelulusan (Tidak Lulus) -->
+    {% if hasil == 'tidak_lulus' %}
+    <div id="hasilTidakLulus" class="w-full max-w-md animate-scale-in">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <!-- Header dengan Ikon Gagal -->
+            <div class="bg-rose-50 border-b border-rose-100 p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-rose-500 rounded-full p-2">
+                        <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-base font-medium text-gray-800">Maaf, Anda Tidak Lulus</h2>
+                        <p class="text-xs text-gray-500">Tahun Ajaran 2024/2025</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Siswa -->
+            <div class="px-5 py-4 border-b border-gray-100">
+                <div class="space-y-1">
+                    <p class="text-base font-medium text-gray-800">{{ data.nama }}</p>
+                    <p class="text-sm text-gray-500">{{ data.nisn }}</p>
+                    <p class="text-sm text-gray-500">{{ data.tanggal_lahir_format }}</p>
+                </div>
+            </div>
+
+            <!-- Pesan Tidak Lulus -->
+            <div class="px-5 py-4 text-sm text-gray-600 leading-relaxed text-justify">
+                <p>Maaf! Anda dinyatakan <span class="font-semibold text-rose-600">TIDAK LULUS</span> pada tahun ajaran
+                    ini.
+                    Jangan berkecil hati, gunakan kesempatan ini untuk belajar dan berkembang lebih baik di masa depan.
+                    Semoga kesuksesan selalu menyertai di kesempatan berikutnya.</p>
+                <p class="mt-2 text-xs text-gray-500">Silakan menghubungi Bapak/Ibu wali kelas untuk konsultasi pada
+                    tanggal 5 Mei 2025.</p>
+            </div>
+
+            <!-- Tombol Kembali -->
+            <div class="px-5 py-4 border-t border-gray-100">
+                <a href="{{ url_for('index') }}"
+                    class="inline-block text-sm text-rose-500 hover:text-rose-600 transition-colors">
+                    Kembali ke Halaman Utama
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="text-center text-gray-600 text-xs md:text-sm mt-8 fade-in">
+        <p>&copy; <span id="current-year"></span> MA Nurul Ummah. Hak Cipta Dilindungi.</p>
+    </div>
+
+    <script>
+        document.getElementById("current-year").textContent = new Date().getFullYear();
+    </script>
+
+</body>
+
+</html>
