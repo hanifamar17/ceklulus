@@ -12,6 +12,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900;1000&display=swap"
         rel="stylesheet">
+    <!-- Di bagian head atau sebelum penutup body -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -115,6 +117,23 @@
 
         .animate-scale-in {
             animation: scaleIn 0.4s ease-out forwards;
+        }
+
+        /* Custom styling for the toasts */
+        .colored-toast {
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        /* Mengurangi jarak antara title dan HTML content */
+        .colored-toast .swal2-title {
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .colored-toast .swal2-html-container {
+            margin-top: 4px !important;
+            padding-top: 0 !important;
         }
     </style>
 </head>
@@ -242,12 +261,15 @@
                     Nurul Ummah. Semoga prestasi ini menjadi awal dari kesuksesan Anda di masa depan.</p>
                 <p class="mt-2 text-xs text-gray-500">Silakan mengikuti proses pengambilan ijazah pada tanggal 10-15 Mei
                     2025.</p>
+                <a href="#" onclick="downloadFile('{{ data.file_pdf }}')"
+                    class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4">
+                    Unduh hasil kelulusan (PDF)
+                </a>
             </div>
 
             <!-- Tombol Kembali -->
             <div class="px-5 py-4 border-t border-gray-100">
-                <a href="{{ url_for('index') }}"
-                    class="inline-block text-sm text-emerald-500 hover:text-emerald-600 transition-colors">
+                <a href="/" class="inline-block text-sm text-emerald-500 hover:text-emerald-600 transition-colors">
                     Kembali ke Halaman Utama
                 </a>
             </div>
@@ -292,12 +314,17 @@
                     Semoga kesuksesan selalu menyertai di kesempatan berikutnya.</p>
                 <p class="mt-2 text-xs text-gray-500">Silakan menghubungi Bapak/Ibu wali kelas untuk konsultasi pada
                     tanggal 5 Mei 2025.</p>
+
+                <a href="#" onclick="downloadFile('{{ data.file_pdf }}')"
+                    class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4">
+                    Unduh hasil kelulusan (PDF)
+                </a>
+
             </div>
 
             <!-- Tombol Kembali -->
             <div class="px-5 py-4 border-t border-gray-100">
-                <a href="{{ url_for('index') }}"
-                    class="inline-block text-sm text-rose-500 hover:text-rose-600 transition-colors">
+                <a href="/" class="inline-block text-sm text-rose-500 hover:text-rose-600 transition-colors">
                     Kembali ke Halaman Utama
                 </a>
             </div>
@@ -309,6 +336,81 @@
     <div class="text-center text-gray-600 text-xs md:text-sm mt-8 fade-in">
         <p>&copy; <span id="current-year"></span> MA Nurul Ummah. Hak Cipta Dilindungi.</p>
     </div>
+
+    <script>
+        // Create SweetAlert2 mixins for different notification styles
+        const Toast = Swal.mixin({
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 1000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.onmouseenter = Swal.stopTimer;
+                toast.onmouseleave = Swal.resumeTimer;
+            }
+        });
+
+        // Clean and minimalist error notification
+        const ErrorToast = Swal.mixin({
+            toast: true,
+            position: "top-end",
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: "#FEE2E2",
+            iconColor: "#EF4444",
+            customClass: {
+                popup: "colored-toast",
+                title: "text-red-800",
+                htmlContainer: "text-red-700 mt-1 text-sm"
+            }
+        });
+
+        function downloadFile(filename) {
+            // Prevent default action
+            event.preventDefault();
+
+            // Check if filename is empty
+            if (!filename) {
+                ErrorToast.fire({
+                    icon: "error",
+                    title: "File tidak tersedia",
+                    html: "Silakan coba lagi nanti atau hubungi TU"
+                });
+                return;
+            }
+
+            // Langsung buka file di tab baru jika filename ada
+            const downloadUrl = '/download/' + filename;
+
+            // Gunakan HEAD request untuk memeriksa apakah file ada terlebih dahulu
+            fetch(downloadUrl, {
+                method: 'HEAD'
+            })
+                .then(response => {
+                    if (response.ok) {
+                        // Jika file ada, buka di tab baru tanpa notifikasi
+                        window.open(downloadUrl, '_blank');
+                    } else {
+                        // Jika file tidak ada, tampilkan error
+                        ErrorToast.fire({
+                            icon: "error",
+                            title: "File tidak ditemukan",
+                            html: "Silakan coba lagi nanti atau hubungi TU"
+                        });
+                    }
+                })
+                .catch(error => {
+                    // Catch network or other errors
+                    ErrorToast.fire({
+                        icon: "error",
+                        title: "Gagal mengunduh file"
+                    });
+                    console.error('Download error:', error);
+                });
+        }
+    </script>
 
     <script>
         document.getElementById("current-year").textContent = new Date().getFullYear();

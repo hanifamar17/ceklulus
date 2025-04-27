@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
 import pandas as pd
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 
@@ -26,6 +27,14 @@ def load_student_data():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/download/<filename>')
+def download(filename):
+    file_path = os.path.join('static/surat_kelulusan', filename)
+    if os.path.exists(file_path):
+        return send_from_directory('static/surat_kelulusan', filename, as_attachment=True)
+    else:
+        return jsonify({'success': False, 'message': 'File tidak ditemukan'}), 404
 
 @app.route('/cek-kelulusan', methods=['POST', "GET"])
 def cek_kelulusan():
