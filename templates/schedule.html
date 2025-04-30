@@ -1,0 +1,193 @@
+<!-- templates/atur_jadwal.html -->
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atur Jadwal Form Kelulusan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.3/cdn.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/1.6.5/flowbite.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900;1000&display=swap"
+        rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col items-center pt-8 px-4">
+    <!-- Header -->
+    <div class="w-full max-w-md mb-6 animate-fade-in">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center p-5 bg-emerald-50 border-b border-emerald-100">
+                <div class="flex-shrink-0 bg-emerald-500 rounded-full p-2">
+                    <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <h1 class="text-lg font-semibold text-gray-800">MA NURUL UMMAH</h1>
+                    <p class="text-xs text-gray-500">Kotagede, Yogyakarta</p>
+                </div>
+            </div>
+            <div class="px-5 py-4">
+                <h2 class="text-base font-medium text-gray-800">Pengumuman Kelulusan Siswa</h2>
+                <p class="text-xs text-gray-500 mt-1">Tahun Ajaran 2024/2025</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel - Form Jadwal -->
+    <div class="w-full max-w-md mb-6 animate-fade-in">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center p-5 bg-emerald-50 border-b border-emerald-100">
+                <div class="flex-shrink-0 bg-emerald-500 rounded-full p-2">
+                    <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h2 class="text-base font-medium text-gray-800">Pengaturan Jadwal</h2>
+                    <p class="text-xs text-gray-500">Atur waktu akses form kelulusan</p>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="p-5">
+                <form method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mulai Akses</label>
+                        <input type="datetime-local" name="mulai" required
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Berakhir Akses</label>
+                        <input type="datetime-local" name="berakhir" required
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Keterangan (opsional)</label>
+                        <input type="text" name="keterangan" placeholder="Masukkan keterangan tambahan jika ada"
+                            class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm">
+                    </div>
+                    <div class="pt-1">
+                        <button type="submit"
+                            class="w-full bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">
+                            Simpan Jadwal
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <!-- Tombol Kembali -->
+            <div class="px-5 py-4 border-t border-gray-100">
+                <a href="/" class="inline-block text-sm text-rose-500 hover:text-rose-600 transition-colors">
+                    Kembali ke Halaman Utama
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="w-full max-w-md mb-6 animate-fade-in">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center p-5 bg-emerald-50 border-b border-emerald-100">
+                <div class="flex-shrink-0 bg-emerald-500 rounded-full p-2">
+                    <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3 flex flex-1 items-center justify-between">
+                    <div>
+                        <h2 class="text-base font-medium text-gray-800">Riwayat Jadwal</h2>
+                        <p class="text-xs text-gray-500">Jadwal yang telah disimpan</p>
+                    </div>
+                    <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
+                        {{ schedule|length }} jadwal
+                    </span>
+                </div>
+            </div>
+
+            <div class="divide-y divide-gray-100">
+                {% for item in schedule|reverse %}
+                <div class="p-5 hover:bg-gray-50 transition-colors">
+                    <div class="flex flex-wrap justify-between items-start">
+                        <div class="space-y-1 mb-2">
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-500 mr-1.5"
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span class="font-medium text-sm text-gray-800">{{ item.mulai|format_datetime }}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500 mr-1.5" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <span class="font-medium text-sm text-gray-800">{{ item.berakhir|format_datetime
+                                    }}</span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{{ item.waktu_input }}</span>
+                        </div>
+                    </div>
+
+                    {% if item.keterangan %}
+                    <div class="mt-2 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-xs">
+                        <span class="font-medium">Keterangan:</span> {{ item.keterangan }}
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-end mt-3">
+                        <form action="{{ url_for('hapus_schedule', index=loop.revindex0) }}" method="POST"
+                            onsubmit="return confirm('Yakin ingin menghapus jadwal ini?');">
+                            <button type="submit"
+                                class="text-red-500 text-xs hover:underline hover:text-red-600 transition">
+                                Hapus Jadwal
+                            </button>
+                        </form>
+                    </div>                    
+                </div>
+                {% else %}
+                <div class="p-5 text-center">
+                    <div class="py-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-300 mx-auto mb-2" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <p class="text-sm text-gray-500">Belum ada jadwal yang disimpan</p>
+                        <p class="text-xs text-gray-400 mt-1">Jadwal yang ditambahkan akan muncul di sini</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+     <!-- Footer -->
+    <div class="text-center text-gray-600 text-xs md:text-sm my-6 fade-in">
+        <p>&copy; <span id="current-year"></span> MA Nurul Ummah. Hak Cipta Dilindungi.</p>
+    </div>
+
+    <script>
+        document.getElementById("current-year").textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>

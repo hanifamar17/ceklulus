@@ -198,10 +198,17 @@
         </div>
     </div>
 
-    <!-- Form Input -->
-    {% if not hasil %}
+    <!-- Form Input (Muncul hanya jika sedang dalam periode aktif) -->
+    {% if form_aktif and not hasil %}
     <div class="w-full max-w-md animate-scale-in">
         <div class="bg-white rounded-xl shadow-sm p-5">
+            <div class="mb-4 text-left">
+                <h2 class="text-lg font-semibold text-gray-700">Form Pengumuman</h2>
+                <p class="text-sm text-gray-500 mt-1">
+                    Form dapat diakses sampai <span class="font-semibold text-gray-700">{{ form_aktif.berakhir_obj |
+                        format_datetime }}</span>
+                </p>
+            </div>
             <form action="{{ url_for('cek_kelulusan') }}" method="POST" id="formKelulusan">
                 <div class="mb-4">
                     <label for="nisn" class="block text-sm font-medium text-gray-700 mb-1">NISN</label>
@@ -209,7 +216,6 @@
                         class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                         placeholder="Masukkan NISN Anda" required>
                 </div>
-
                 <div class="mb-5">
                     <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700 mb-1">Tanggal
                         Lahir</label>
@@ -217,7 +223,6 @@
                         class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
                         required>
                 </div>
-
                 <button type="submit"
                     class="w-full bg-emerald-500 text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">
                     Cek Kelulusan
@@ -226,6 +231,72 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Informasi jadwal dengan Countdown Timer -->
+    {% if not form_aktif and not hasil %}
+    <div class="w-full max-w-md animate-fade-in">
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center p-4 bg-emerald-50 border-b border-emerald-100">
+                <div class="flex-shrink-0 bg-emerald-500 rounded-full p-2">
+                    <svg class="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h2 class="text-base font-medium text-gray-800">Informasi Belum Tersedia</h2>
+                    <p class="text-xs text-gray-500">Silakan tunggu hingga waktu yang ditentukan</p>
+                </div>
+            </div>
+
+            <div class="p-4 text-center">
+                <p class="text-sm text-gray-600">
+                    Saat ini pengumuman kelulusan belum tersedia.
+                    {% if next_schedule %}
+                    Sistem akan dibuka pada <span class="font-semibold text-gray-800">{{ next_schedule.mulai_obj |
+                        format_datetime }}</span>
+                    hingga <span class="font-semibold text-gray-800">{{ next_schedule.berakhir_obj | format_datetime
+                        }}</span>.
+                    {% else %}
+                    Silakan cek kembali nanti setelah jadwal diumumkan.
+                    {% endif %}
+                </p>
+            </div>
+            {% if next_schedule %}
+            <div class="bg-emerald-50 border-t border-emerald-100 p-4">
+                <h3 class="text-sm font-medium text-gray-700 text-center mb-3">Countdown Menuju Pengumuman</h3>
+                <div class="grid grid-cols-4 gap-2 text-center" id="countdown" data-target="{{ next_schedule.mulai }}">
+                    <!-- Hidden elements untuk timestamp server -->
+                    <input type="hidden" id="server-target-time" data-value="{{ server_target_timestamp }}">
+                    <input type="hidden" id="server-current-time" data-value="{{ server_current_timestamp }}">
+
+                    <div class="bg-white shadow-sm rounded-lg p-2">
+                        <div class="text-lg font-bold text-emerald-600" id="days">00</div>
+                        <div class="text-xs text-gray-500">Hari</div>
+                    </div>
+                    <div class="bg-white shadow-sm rounded-lg p-2">
+                        <div class="text-lg font-bold text-emerald-600" id="hours">00</div>
+                        <div class="text-xs text-gray-500">Jam</div>
+                    </div>
+                    <div class="bg-white shadow-sm rounded-lg p-2">
+                        <div class="text-lg font-bold text-emerald-600" id="minutes">00</div>
+                        <div class="text-xs text-gray-500">Menit</div>
+                    </div>
+                    <div class="bg-white shadow-sm rounded-lg p-2">
+                        <div class="text-lg font-bold text-emerald-600" id="seconds">00</div>
+                        <div class="text-xs text-gray-500">Detik</div>
+                    </div>
+                </div>
+                <div class="mt-3 text-center">
+                    <p class="text-xs text-gray-500">Halaman akan otomatis direfresh ketika sudah waktunya</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
 
     <!-- Hasil Kelulusan (Lulus) -->
     {% if hasil == 'lulus' %}
@@ -263,7 +334,7 @@
                     2025.</p>
                 <a href="#" onclick="downloadFile('{{ data.file_pdf }}')"
                     class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4">
-                    Unduh hasil kelulusan (PDF)
+                    Unduh pengumuman (PDF)
                 </a>
             </div>
 
@@ -317,7 +388,7 @@
 
                 <a href="#" onclick="downloadFile('{{ data.file_pdf }}')"
                     class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4">
-                    Unduh hasil kelulusan (PDF)
+                    Unduh pengumuman (PDF)
                 </a>
 
             </div>
@@ -333,7 +404,7 @@
     {% endif %}
 
     <!-- Footer -->
-    <div class="text-center text-gray-600 text-xs md:text-sm mt-8 fade-in">
+    <div class="text-center text-gray-600 text-xs md:text-sm my-6 fade-in">
         <p>&copy; <span id="current-year"></span> MA Nurul Ummah. Hak Cipta Dilindungi.</p>
     </div>
 
@@ -411,6 +482,61 @@
                 });
         }
     </script>
+
+    {% if next_schedule %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Mendapatkan timestamp target dan timestamp server saat ini
+            const serverTargetTime = parseInt(document.getElementById('server-target-time').dataset.value);
+            const serverCurrentTime = parseInt(document.getElementById('server-current-time').dataset.value);
+
+            // Catat waktu halaman dimuat dengan performance.now() untuk pengukuran waktu yang akurat
+            const pageLoadTime = performance.now();
+
+            // Update countdown setiap 1 detik
+            const countdownInterval = setInterval(function () {
+                // Hitung waktu berlalu sejak halaman dimuat dalam ms
+                const elapsed = performance.now() - pageLoadTime;
+
+                // Hitung waktu saat ini berdasarkan waktu server + waktu yang berlalu
+                const now = serverCurrentTime + elapsed;
+
+                // Selisih waktu antara sekarang dan target
+                const distance = serverTargetTime - now;
+
+                // Kalkulasi waktu untuk hari, jam, menit, dan detik
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                // Tampilkan hasil di element dengan id
+                document.getElementById("days").innerHTML = days.toString().padStart(2, '0');
+                document.getElementById("hours").innerHTML = hours.toString().padStart(2, '0');
+                document.getElementById("minutes").innerHTML = minutes.toString().padStart(2, '0');
+                document.getElementById("seconds").innerHTML = seconds.toString().padStart(2, '0');
+
+                // Log untuk debugging (bisa dihapus di produksi)
+                // console.log(`Server time: ${new Date(serverCurrentTime + elapsed).toLocaleString()}, Target: ${new Date(serverTargetTime).toLocaleString()}, Distance: ${distance}ms`);
+
+                // Jika countdown selesai
+                if (distance < 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById("countdown").innerHTML =
+                        '<div class="col-span-4 py-3 bg-emerald-100 rounded-lg">' +
+                        '<p class="text-emerald-700 font-medium">Sistem sudah dapat diakses!</p>' +
+                        '<p class="text-xs text-emerald-600 mt-1">Sedang memuat halaman...</p>' +
+                        '</div>';
+
+                    // Refresh halaman secara otomatis setelah countdown selesai
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 3000);
+                }
+            }, 1000);
+        });
+    </script>
+    {% endif %}
 
     <script>
         document.getElementById("current-year").textContent = new Date().getFullYear();
