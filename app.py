@@ -5,6 +5,8 @@ import os
 import json
 
 app = Flask(__name__)
+secret_key = os.urandom(24)  # Generate a random secret key for session management
+app.secret_key = secret_key
 
 # Function to load data from Excel file
 def load_student_data():
