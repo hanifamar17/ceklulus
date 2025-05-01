@@ -16,10 +16,12 @@
     <!-- Di bagian head atau sebelum penutup body -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* Base styles */
         body {
             font-family: 'Inter', sans-serif;
         }
 
+        /* Gradient backgrounds */
         .success-bg {
             background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
         }
@@ -28,6 +30,7 @@
             background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
         }
 
+        /* Animation classes */
         .fade-in {
             opacity: 0;
             animation: fadeIn ease-in 0.5s forwards;
@@ -47,18 +50,15 @@
             animation-delay: 0.2s;
         }
 
-        @keyframes slideIn {
-            0% {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-
-            100% {
-                transform: translateY(0);
-                opacity: 1;
-            }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
         }
 
+        .animate-scale-in {
+            animation: scaleIn 0.4s ease-out forwards;
+        }
+
+        /* Notification styling */
         .notification {
             position: fixed;
             top: 20px;
@@ -78,18 +78,29 @@
             animation: slideInRight 0.5s ease forwards;
         }
 
-        @keyframes slideInRight {
-            0% {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            100% {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        /* Custom styling for the toasts */
+        .colored-toast {
+            border-radius: 8px !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
         }
 
+        .colored-toast .swal2-title {
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+        }
+
+        .colored-toast .swal2-html-container {
+            margin-top: 4px !important;
+            padding-top: 0 !important;
+        }
+
+        /* Download link styling */
+        .download-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        /* Keyframes definitions */
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -112,29 +123,28 @@
             }
         }
 
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-out forwards;
+        @keyframes slideIn {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
-        .animate-scale-in {
-            animation: scaleIn 0.4s ease-out forwards;
-        }
+        @keyframes slideInRight {
+            0% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
 
-        /* Custom styling for the toasts */
-        .colored-toast {
-            border-radius: 8px !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-        }
-
-        /* Mengurangi jarak antara title dan HTML content */
-        .colored-toast .swal2-title {
-            padding-bottom: 0 !important;
-            margin-bottom: 0 !important;
-        }
-
-        .colored-toast .swal2-html-container {
-            margin-top: 4px !important;
-            padding-top: 0 !important;
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
     </style>
 </head>
@@ -333,8 +343,8 @@
                     Nurul Ummah. Semoga prestasi ini menjadi awal dari kesuksesan Anda di masa depan.</p>
                 <p class="mt-2 text-xs text-gray-500">Silakan mengikuti proses pengambilan ijazah pada tanggal 10-15 Mei
                     2025.</p>
-                <a href="#" onclick="downloadFile('{{ data.file_pdf }}')"
-                    class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4">
+                <a href="#" onclick="downloadFile('{{ data.file_pdf }}', this)"
+                    class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4 download-link">
                     Unduh pengumuman (PDF)
                 </a>
             </div>
@@ -387,8 +397,8 @@
                 <p class="mt-2 text-xs text-gray-500">Silakan menghubungi Bapak/Ibu wali kelas untuk konsultasi pada
                     tanggal 5 Mei 2025.</p>
 
-                <a href="#" onclick="downloadFile('{{ data.file_pdf }}')"
-                    class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4">
+                <a href="#" onclick="downloadFile('{{ data.file_pdf }}', this)"
+                    class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4 download-link">
                     Unduh pengumuman (PDF)
                 </a>
 
@@ -439,9 +449,18 @@
             }
         });
 
-        function downloadFile(filename) {
+        function downloadFile(filename, linkElement) {
             // Prevent default action
             event.preventDefault();
+
+            // Simpan teks asli link
+            const originalText = linkElement.textContent.trim();
+
+            // Ubah teks link menjadi "Sedang mengunduh..."
+            linkElement.textContent = "Sedang mengunduh...";
+
+            // Nonaktifkan link sementara
+            linkElement.classList.add("pointer-events-none", "opacity-70");
 
             // Check if filename is empty
             if (!filename) {
@@ -450,6 +469,9 @@
                     title: "File tidak tersedia",
                     html: "Silakan coba lagi nanti atau hubungi TU"
                 });
+                // Kembalikan teks link ke aslinya
+                linkElement.textContent = originalText;
+                linkElement.classList.remove("pointer-events-none", "opacity-70");
                 return;
             }
 
@@ -472,6 +494,9 @@
                             html: "Silakan coba lagi nanti atau hubungi TU"
                         });
                     }
+                    // Kembalikan teks link ke aslinya
+                    linkElement.textContent = originalText;
+                    linkElement.classList.remove("pointer-events-none", "opacity-70");
                 })
                 .catch(error => {
                     // Catch network or other errors
@@ -480,6 +505,9 @@
                         title: "Gagal mengunduh file"
                     });
                     console.error('Download error:', error);
+                    // Kembalikan teks link ke aslinya
+                    linkElement.textContent = originalText;
+                    linkElement.classList.remove("pointer-events-none", "opacity-70");
                 });
         }
     </script>

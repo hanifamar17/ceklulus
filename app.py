@@ -1,32 +1,167 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, send_file
 import pandas as pd
 from datetime import datetime
 import os
 import json
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
+from google.oauth2 import service_account
+import io
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 secret_key = os.urandom(24)  # Generate a random secret key for session management
 app.secret_key = secret_key
+load_dotenv()
 
-# Function to load data from Excel file
-def load_student_data():
+CREDENTIALS_FILE = 'credentials.json'
+SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
+FOLDER_ID_SISWA = os.getenv('FOLDER_ID_SISWA') 
+FOLDER_ID_SURAT = os.getenv('FOLDER_ID_SURAT')
+FILE_NAME_SISWA = 'data_siswa.xlsx'
+CACHE_DIR = './cache'  # Folder untuk cache lokal
+os.makedirs(CACHE_DIR, exist_ok=True) 
+
+
+# Fungsi autentikasi ke Google Drive
+def authenticate_google_drive():
+    creds = service_account.Credentials.from_service_account_file(
+        CREDENTIALS_FILE, scopes=SCOPES
+    )
+    return build('drive', 'v3', credentials=creds)
+
+
+# Fungsi mendapatkan file ID dari nama file & folder
+def get_file_id(service, folder_id, file_name):
+    query = f"name = '{file_name}' and '{folder_id}' in parents and trashed = false"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
+    items = results.get('files', [])
+    return items[0]['id'] if items else None
+
+# Fungsi untuk memuat data siswa dan menyimpan ke cache
+def load_student_data_from_drive():
     try:
-        df = pd.read_excel('data_siswa.xlsx')
+        # Nama file yang digunakan untuk cache
+        cached_file_path = os.path.join(CACHE_DIR, FILE_NAME_SISWA)
+        
+        # Jika file sudah ada di cache, langsung baca dari cache
+        if os.path.exists(cached_file_path):
+            print(f"File {FILE_NAME_SISWA} sudah di-cache. Menggunakan data cache.")
+            try:
+                with open(cached_file_path, 'rb') as f:
+                    file_data = f.read()
+                    df = pd.read_excel(io.BytesIO(file_data))
+            except Exception as e:
+                print(f"Error reading cached file: {e}")
+                print("Cache kemungkinan korup. Menghapus dan mencoba mengunduh ulang dari Google Drive...")
+                os.remove(cached_file_path)  # Hapus file cache rusak
+                return load_student_data_from_drive()  # Coba ulang
+        else:
+            # Jika file belum ada di cache, ambil dari Google Drive
+            print(f"File {FILE_NAME_SISWA} belum ada di cache. Mengunduh dari Drive...")
+            service = authenticate_google_drive()
+            file_id = get_file_id(service, FOLDER_ID_SISWA, FILE_NAME_SISWA)
+            if not file_id:
+                print("File tidak ditemukan di folder siswa.")
+                return pd.DataFrame()
 
+            request = service.files().get_media(fileId=file_id)
+            fh = io.BytesIO()
+            downloader = MediaIoBaseDownload(fh, request)
+
+            done = False
+            while not done:
+                status, done = downloader.next_chunk()
+
+            fh.seek(0)
+            try:
+                # Baca langsung dari stream untuk file yang diunduh
+                df = pd.read_excel(fh)
+            except Exception as e:
+                print(f"Error reading downloaded file: {e}")
+                return pd.DataFrame()  # Mengembalikan DataFrame kosong jika gagal membaca file
+
+            # Simpan file yang diunduh ke cache
+            with open(cached_file_path, 'wb') as f:
+                f.write(fh.getvalue())  # Pastikan menggunakan getvalue() untuk menulis ke file
+            print(f"File {FILE_NAME_SISWA} berhasil diunduh dan disimpan di cache.")
+
+        # Cek kolom yang ada di DataFrame
+        print(f"Kolom yang ditemukan di file: {df.columns.tolist()}")
+
+        # Normalisasi kolom jika ada
         if 'nisn' in df.columns:
             df['nisn'] = df['nisn'].astype(str).str.strip()
-        
         if 'tanggal_lahir' in df.columns:
-            df['tanggal_lahir'] = pd.to_datetime(df['tanggal_lahir'], format='%d/%m/%Y').dt.strftime('%Y-%m-%d')
-        
+            df['tanggal_lahir'] = pd.to_datetime(df['tanggal_lahir'], errors='coerce').dt.strftime('%Y-%m-%d')
         if 'status_kelulusan' in df.columns:
             df['status_kelulusan'] = df['status_kelulusan'].str.upper().str.strip()
 
         return df
+
     except Exception as e:
-        print(f"Error loading Excel file: {e}")
+        print(f"Error loading student data: {e}")
         return pd.DataFrame()
 
+# Fungsi untuk mengunduh dan menyimpan file ke cache lokal
+def download_file_from_drive(file_name, folder_id):
+    # Cek apakah file sudah ada di cache
+    cached_file = download_file_from_cache(file_name)
+    if cached_file:
+        return cached_file
+
+    try:
+        service = authenticate_google_drive()
+        file_id = get_file_id(service, folder_id, file_name)
+        if not file_id:
+            return None
+
+        request = service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+
+        fh.seek(0)
+
+        # Tentukan ekstensi file dan cache
+        file_extension = file_name.split('.')[-1].lower()
+        local_cache_path = f'./cache/{file_name}'
+
+        # Caching berdasarkan ekstensi file
+        if file_extension in ['pdf', 'xlsx']:
+            with open(local_cache_path, 'wb') as f:
+                f.write(fh.getvalue())
+        
+        return fh
+    except Exception as e:
+        print(f"Error downloading file: {e}")
+        return None
+
+# Fungsi untuk memeriksa file yang sudah ter-cache
+def download_file_from_cache(file_name):
+    cache_file_path = f'./cache/{file_name}'
+    if os.path.exists(cache_file_path):
+        with open(cache_file_path, 'rb') as f:
+            return io.BytesIO(f.read())
+    return None
+
+@app.route('/download/<filename>')
+def download(filename):
+    # Cek apakah file sudah ada di cache
+    cache_file_path = f'./cache/{filename}'
+    if os.path.exists(cache_file_path):
+        return send_file(cache_file_path, as_attachment=True, download_name=filename)
+    
+    # Jika file belum ada di cache, unduh dari Google Drive
+    file_stream = download_file_from_drive(filename, FOLDER_ID_SURAT)
+    if file_stream:
+        return send_file(file_stream, as_attachment=True, download_name=filename)
+    else:
+        return jsonify({'success': False, 'message': 'File tidak ditemukan'}), 404
+    
 @app.route('/')
 def index():
     form_aktif, next_schedule = get_schedule_status()
@@ -46,14 +181,7 @@ def index():
                            next_schedule=next_schedule, 
                            server_current_timestamp=server_current_timestamp,
                            server_target_timestamp=server_target_timestamp)
-
-@app.route('/download/<filename>')
-def download(filename):
-    file_path = os.path.join('static/surat_kelulusan', filename)
-    if os.path.exists(file_path):
-        return send_from_directory('static/surat_kelulusan', filename, as_attachment=True)
-    else:
-        return jsonify({'success': False, 'message': 'File tidak ditemukan'}), 404
+    return jsonify({'success': False, 'message': 'File tidak ditemukan'}), 404
 
 @app.route('/cek-kelulusan', methods=['POST', "GET"])
 def cek_kelulusan():
@@ -87,7 +215,7 @@ def cek_kelulusan():
             tanggal_lahir_formatted = tanggal_lahir_obj.strftime('%Y-%m-%d')
             
             # Load data siswa dari Excel
-            df = load_student_data()
+            df = load_student_data_from_drive()
             
             # Pastikan format tanggal lahir di database konsisten
             if not df.empty and 'tanggal_lahir' in df.columns:
@@ -255,5 +383,43 @@ def format_datetime(value):
     return f"{dt.day} {bulan[dt.strftime('%m')]} {dt.year} {dt.strftime('%H:%M')} WIB"
 
 
+
+# Fungsi untuk memulai cache
+def get_all_files(service, folder_id):
+    try:
+        query = f"'{folder_id}' in parents and trashed = false"
+        results = service.files().list(q=query, fields="files(id, name, mimeType)").execute()
+        items = results.get('files', [])
+        if not items:
+            print("No files found.")
+            return []
+        return items
+    except Exception as e:
+        print("Error getting files:", e)
+        return []
+
+def warm_up_cache_for_files(folder_id):
+    service = authenticate_google_drive()
+    files = get_all_files(service, folder_id)
+
+    for file in files:
+        file_name = file['name']
+        print(f"Memulai pre-caching file: {file_name}")
+        file_stream = download_file_from_drive(file_name, folder_id)
+        if file_stream:
+            print(f"File {file_name} berhasil di-cache.")
+        else:
+            print(f"File {file_name} gagal diunduh dan tidak bisa di-cache.")
+
+# Memanggil fungsi pre-caching langsung sebelum aplikasi dimulai
+def pre_cache_student_data():
+    load_student_data_from_drive()
+    
+def pre_cache_files():
+    folder_id = FOLDER_ID_SURAT  # Gunakan folder ID yang sesuai
+    pre_cache_student_data()
+    warm_up_cache_for_files(folder_id)
+
 if __name__ == '__main__':
+    pre_cache_files() # Pre-cache files saat aplikasi dimulai
     app.run(debug=True)
