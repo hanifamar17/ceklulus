@@ -487,5 +487,5 @@ def pre_cache_files():
     warm_up_cache_for_files(folder_id)
 
 if __name__ == '__main__':
-    pre_cache_files() # Pre-cache files saat aplikasi dimulai
+    #pre_cache_files() # Pre-cache files saat aplikasi dimulai
     app.run(debug=True)
