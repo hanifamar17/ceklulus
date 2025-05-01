@@ -274,36 +274,13 @@
                     {% endif %}
                 </p>
             </div>
+
             {% if next_schedule %}
             <div class="bg-emerald-50 border-t border-emerald-100 p-4">
                 <h3 class="text-sm font-medium text-gray-700 text-center mb-3">Countdown Menuju Pengumuman</h3>
                 <div class="grid grid-cols-4 gap-2 text-center" id="countdown" data-target="{{ next_schedule.mulai }}">
-                    <!-- Hidden elements untuk timestamp server -->
                     <input type="hidden" id="server-target-time" data-value="{{ server_target_timestamp }}">
                     <input type="hidden" id="server-current-time" data-value="{{ server_current_timestamp }}">
-
-                    <!-- Tambahkan debugging info (hapus di produksi) -->
-                    <div class="col-span-4 text-xs text-gray-500 mb-2" style="display: none;">
-                        <p>Server time: {{ debug_info.server_time }}</p>
-                        <p>Target time: {{ debug_info.target_time }}</p>
-                    </div>
-
-                    <div class="bg-white shadow-sm rounded-lg p-2">
-                        <div class="text-lg font-bold text-emerald-600" id="days">00</div>
-                        <div class="text-xs text-gray-500">Hari</div>
-                    </div>
-                    <div class="bg-white shadow-sm rounded-lg p-2">
-                        <div class="text-lg font-bold text-emerald-600" id="hours">00</div>
-                        <div class="text-xs text-gray-500">Jam</div>
-                    </div>
-                    <div class="bg-white shadow-sm rounded-lg p-2">
-                        <div class="text-lg font-bold text-emerald-600" id="minutes">00</div>
-                        <div class="text-xs text-gray-500">Menit</div>
-                    </div>
-                    <div class="bg-white shadow-sm rounded-lg p-2">
-                        <div class="text-lg font-bold text-emerald-600" id="seconds">00</div>
-                        <div class="text-xs text-gray-500">Detik</div>
-                    </div>
                 </div>
                 <div class="mt-3 text-center">
                     <p class="text-xs text-gray-500">Halaman akan otomatis direfresh ketika sudah waktunya</p>

@@ -8,14 +8,12 @@ from google.oauth2 import service_account
 import io
 from dotenv import load_dotenv
 import requests
-from datetime import datetime, timezone as dt_timezone
+from datetime import datetime
 from pytz import timezone
 
 app = Flask(__name__)
 secret_key = os.urandom(24)  # Generate a random secret key for session management
 app.secret_key = secret_key
-
-os.environ['TZ'] = 'Asia/Jakarta'
 
 # Load .env jika dijalankan secara lokal
 if os.getenv("VERCEL") is None:  # Deteksi bukan di Vercel
@@ -199,12 +197,6 @@ def index():
     # Jika ada jadwal berikutnya, ambil timestamp target-nya
     server_target_timestamp = int(next_schedule['mulai_obj'].timestamp() * 1000) if next_schedule else None
 
-    # Tambahkan data debugging
-    debug_info = {
-        'server_time': now.strftime('%Y-%m-%d %H:%M:%S %Z'),
-        'target_time': next_schedule['mulai_obj'].strftime('%Y-%m-%d %H:%M:%S %Z') if next_schedule else None,
-    }
-
     return render_template(
         'index.html', 
         hasil=None, 
@@ -213,8 +205,7 @@ def index():
         form_aktif=form_aktif, 
         next_schedule=next_schedule, 
         server_current_timestamp=server_current_timestamp,
-        server_target_timestamp=server_target_timestamp,
-        debug_info=debug_info
+        server_target_timestamp=server_target_timestamp
     )
 
 @app.route('/cek-kelulusan', methods=['POST', "GET"])
@@ -428,6 +419,7 @@ def get_schedule_status():
         mulai = datetime.strptime(schedule['mulai'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz)
         berakhir = datetime.strptime(schedule['berakhir'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz)
 
+        # Menambahkan logika jika sekarang lebih kecil dari waktu mulai
         if mulai <= now <= berakhir:
             form_aktif = schedule
             form_aktif['mulai_obj'] = mulai
@@ -439,7 +431,7 @@ def get_schedule_status():
                 next_schedule['mulai_obj'] = mulai
                 next_schedule['berakhir_obj'] = berakhir
 
-    # Add debug information to help diagnose timezone issues
+    # Menambahkan debug info untuk diagnosa masalah
     if next_schedule:
         next_schedule['debug_info'] = {
             'now': now.strftime('%Y-%m-%d %H:%M:%S %Z'),
@@ -465,37 +457,6 @@ def format_datetime(value):
         dt = value
         
     return f"{dt.day} {bulan[dt.strftime('%m')]} {dt.year} {dt.strftime('%H:%M')} WIB"
-
-@app.route("/timezone-check")
-def timezone_check():
-    """
-    Helper endpoint to check timezone settings on the server
-    """
-    # Check system timezone
-    import time
-    system_tz = time.tzname
-    
-    # Get UTC time
-    utc_now = datetime.now(timezone('UTC'))
-    
-    # Get Jakarta time
-    jakarta_now = datetime.now(timezone('Asia/Jakarta'))
-    
-    # Get current time without timezone (will use system timezone)
-    system_now = datetime.now()
-    
-    return {
-        "system_timezone": system_tz,
-        "utc_time": utc_now.strftime("%Y-%m-%d %H:%M:%S %Z"),
-        "jakarta_time": jakarta_now.strftime("%Y-%m-%d %H:%M:%S %Z"),
-        "system_time": system_now.strftime("%Y-%m-%d %H:%M:%S"),
-        "timestamp_comparison": {
-            "utc_timestamp": int(utc_now.timestamp()),
-            "jakarta_timestamp": int(jakarta_now.timestamp()),
-            "system_timestamp": int(system_now.timestamp())
-        }
-    }
-
 
 # Fungsi untuk memulai cache
 def get_all_files(service, folder_id):
