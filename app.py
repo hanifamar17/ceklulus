@@ -416,8 +416,8 @@ def get_schedule_status():
     next_schedule = None
 
     for schedule in data:
-        mulai = datetime.strptime(schedule['mulai'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz)
-        berakhir = datetime.strptime(schedule['berakhir'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz)
+        mulai = tz.localize(datetime.strptime(schedule['mulai'], '%Y-%m-%dT%H:%M'))
+        berakhir = tz.localize(datetime.strptime(schedule['berakhir'], '%Y-%m-%dT%H:%M'))
 
         # Menambahkan logika jika sekarang lebih kecil dari waktu mulai
         if mulai <= now <= berakhir:
@@ -426,7 +426,7 @@ def get_schedule_status():
             form_aktif['berakhir_obj'] = berakhir
             break
         elif now < mulai:
-            if not next_schedule or mulai < datetime.strptime(next_schedule['mulai'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz):
+            if not next_schedule or mulai < next_schedule['mulai_obj']:
                 next_schedule = schedule
                 next_schedule['mulai_obj'] = mulai
                 next_schedule['berakhir_obj'] = berakhir
