@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 import pandas as pd
-from datetime import datetime
 import os
 import json
 from googleapiclient.discovery import build
@@ -9,6 +8,8 @@ from google.oauth2 import service_account
 import io
 from dotenv import load_dotenv
 import requests
+from datetime import datetime, timedelta
+from pytz import timezone
 
 app = Flask(__name__)
 secret_key = os.urandom(24)  # Generate a random secret key for session management
@@ -33,13 +34,13 @@ else:
     raise EnvironmentError("CREDENTIALS_JSON tidak ditemukan dalam environment variables")
 
 # SCOPES dan folder_id diambil dari ENV
-SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
-FOLDER_ID_SISWA = os.getenv('FOLDER_ID_SISWA') 
-FOLDER_ID_SURAT = os.getenv('FOLDER_ID_SURAT')
-FILE_NAME_SISWA = 'data_siswa.xlsx'
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+FOLDER_ID_SISWA = os.getenv("FOLDER_ID_SISWA") 
+FOLDER_ID_SURAT = os.getenv("FOLDER_ID_SURAT")
+FILE_NAME_SISWA = "data_siswa.xlsx"
 
 # Tentukan cache direktori, pastikan di /tmp di Vercel
-CACHE_DIR = '/tmp/cache' if os.getenv('VERCEL') else './cache'
+CACHE_DIR = "/tmp/cache" if os.getenv("VERCEL") else "./cache"
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 GIST_ID = os.getenv("GIST_ID")
@@ -188,34 +189,39 @@ def download(filename):
 @app.route('/')
 def index():
     form_aktif, next_schedule = get_schedule_status()
-    server_current_timestamp = int(datetime.now().timestamp() * 1000)  # Convert to milliseconds
-    server_target_timestamp = 0
 
-    if next_schedule:
-        # Konversi tanggal target ke timestamp
-        target_date = next_schedule['mulai_obj']
-        server_target_timestamp = int(target_date.timestamp() * 1000)  # Target timestamp dalam ms
+    # Ambil waktu sekarang dari Asia/Jakarta dan konversi ke timestamp dalam milidetik
+    now = datetime.now(timezone('Asia/Jakarta'))
+    server_current_timestamp = int(now.timestamp() * 1000)
 
-    return render_template('index.html', 
-                           hasil=None, 
-                           data=None, 
-                           error=None, 
-                           form_aktif=form_aktif, 
-                           next_schedule=next_schedule, 
-                           server_current_timestamp=server_current_timestamp,
-                           server_target_timestamp=server_target_timestamp)
-    return jsonify({'success': False, 'message': 'File tidak ditemukan'}), 404
+    # Jika ada jadwal berikutnya, ambil timestamp target-nya
+    server_target_timestamp = int(next_schedule['mulai_obj'].timestamp() * 1000) if next_schedule else None
+
+    # Tambahkan data debugging
+    debug_info = {
+        'server_time': now.strftime('%Y-%m-%d %H:%M:%S %Z'),
+        'target_time': next_schedule['mulai_obj'].strftime('%Y-%m-%d %H:%M:%S %Z') if next_schedule else None,
+    }
+
+    return render_template(
+        'index.html', 
+        hasil=None, 
+        data=None, 
+        error=None, 
+        form_aktif=form_aktif, 
+        next_schedule=next_schedule, 
+        server_current_timestamp=server_current_timestamp,
+        server_target_timestamp=server_target_timestamp,
+        debug_info=debug_info
+    )
 
 @app.route('/cek-kelulusan', methods=['POST', "GET"])
 def cek_kelulusan():
     form_aktif, next_schedule = get_schedule_status()
-    server_current_timestamp = int(datetime.now().timestamp() * 1000)  # Timestamp saat ini dalam ms
-    server_target_timestamp = 0
     
-    if next_schedule:
-        # Konversi tanggal target ke timestamp
-        target_date = next_schedule['mulai_obj']
-        server_target_timestamp = int(target_date.timestamp() * 1000)  # Target timestamp dalam ms
+    now = datetime.now(timezone('Asia/Jakarta'))
+    server_current_timestamp = int(now.timestamp() * 1000)
+    server_target_timestamp = int(next_schedule['mulai_obj'].timestamp() * 1000) if next_schedule else None
 
     if request.method == 'POST':
         if not form_aktif:
@@ -327,14 +333,11 @@ def load_schedule():
     url = f"https://api.github.com/gists/{GIST_ID}"
     headers = {"Authorization": f"token {GITHUB_TOKEN}"}
     response = requests.get(url, headers=headers)
-
     if response.status_code != 200:
         print("Gagal mengambil jadwal:", response.status_code)
         return []
-
     gist_data = response.json()
     file_content = gist_data["files"].get(GIST_FILENAME, {}).get("content", "[]")
-
     try:
         return json.loads(file_content)
     except json.JSONDecodeError:
@@ -343,15 +346,12 @@ def load_schedule():
 def save_schedule(schedule_baru):
     schedule = load_schedule()
     schedule.append(schedule_baru)
-
     updated_content = json.dumps(schedule, indent=4)
-
     url = f"https://api.github.com/gists/{GIST_ID}"
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github+json"
     }
-
     data = {
         "files": {
             GIST_FILENAME: {
@@ -359,27 +359,28 @@ def save_schedule(schedule_baru):
             }
         }
     }
-
     response = requests.patch(url, headers=headers, json=data)
     if response.status_code != 200:
         print("Gagal menyimpan jadwal:", response.status_code)
-
+        
 @app.route("/admin/schedule", methods=["GET", "POST"])
 def atur_schedule():
     if request.method == "POST":
-        mulai = request.form.get("mulai")
+        mulai = request.form.get("mulai")       # format: "2025-05-01T20:15"
         berakhir = request.form.get("berakhir")
         keterangan = request.form.get("keterangan")
-
+        
+        # Gunakan langsung input 'mulai' sebagai 'waktu_input'
+        waktu_input = mulai
+        
         save_schedule({
             "mulai": mulai,
             "berakhir": berakhir,
             "keterangan": keterangan,
-            "waktu_input": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "waktu_input": waktu_input
         })
-
         return redirect(url_for("atur_schedule"))
-
+        
     schedule = load_schedule()
     return render_template("schedule.html", schedule=schedule)
 
@@ -408,24 +409,35 @@ def hapus_schedule(index):
     return redirect(url_for("atur_schedule"))
 
 def get_schedule_status():
+    tz = timezone('Asia/Jakarta')  # atur timezone ke WIB
+    now = datetime.now(tz)  # Explicitly use Jakarta timezone
+
     data = load_schedule()
-    now = datetime.now()
     form_aktif = None
     next_schedule = None
 
     for schedule in data:
-        mulai = datetime.strptime(schedule['mulai'], '%Y-%m-%dT%H:%M')
-        berakhir = datetime.strptime(schedule['berakhir'], '%Y-%m-%dT%H:%M')
+        mulai = datetime.strptime(schedule['mulai'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz)
+        berakhir = datetime.strptime(schedule['berakhir'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz)
+
         if mulai <= now <= berakhir:
             form_aktif = schedule
             form_aktif['mulai_obj'] = mulai
             form_aktif['berakhir_obj'] = berakhir
             break
         elif now < mulai:
-            if not next_schedule or mulai < datetime.strptime(next_schedule['mulai'], '%Y-%m-%dT%H:%M'):
+            if not next_schedule or mulai < datetime.strptime(next_schedule['mulai'], '%Y-%m-%dT%H:%M').replace(tzinfo=tz):
                 next_schedule = schedule
                 next_schedule['mulai_obj'] = mulai
                 next_schedule['berakhir_obj'] = berakhir
+
+    # Add debug information to help diagnose timezone issues
+    if next_schedule:
+        next_schedule['debug_info'] = {
+            'now': now.strftime('%Y-%m-%d %H:%M:%S %Z'),
+            'mulai': next_schedule['mulai_obj'].strftime('%Y-%m-%d %H:%M:%S %Z'),
+            'berakhir': next_schedule['berakhir_obj'].strftime('%Y-%m-%d %H:%M:%S %Z'),
+        }
 
     return form_aktif, next_schedule
 
@@ -445,7 +457,6 @@ def format_datetime(value):
         dt = value
         
     return f"{dt.day} {bulan[dt.strftime('%m')]} {dt.year} {dt.strftime('%H:%M')} WIB"
-
 
 
 # Fungsi untuk memulai cache

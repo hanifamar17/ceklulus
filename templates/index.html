@@ -282,6 +282,12 @@
                     <input type="hidden" id="server-target-time" data-value="{{ server_target_timestamp }}">
                     <input type="hidden" id="server-current-time" data-value="{{ server_current_timestamp }}">
 
+                    <!-- Tambahkan debugging info (hapus di produksi) -->
+                    <div class="col-span-4 text-xs text-gray-500 mb-2" style="display: none;">
+                        <p>Server time: {{ debug_info.server_time }}</p>
+                        <p>Target time: {{ debug_info.target_time }}</p>
+                    </div>
+
                     <div class="bg-white shadow-sm rounded-lg p-2">
                         <div class="text-lg font-bold text-emerald-600" id="days">00</div>
                         <div class="text-xs text-gray-500">Hari</div>
@@ -525,7 +531,7 @@
             // Update countdown setiap 1 detik
             const countdownInterval = setInterval(function () {
                 // Hitung waktu berlalu sejak halaman dimuat dalam ms
-                const elapsed = performance.now() - pageLoadTime;
+                const elapsed = Math.floor(performance.now() - pageLoadTime);
 
                 // Hitung waktu saat ini berdasarkan waktu server + waktu yang berlalu
                 const now = serverCurrentTime + elapsed;
@@ -540,16 +546,13 @@
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
                 // Tampilkan hasil di element dengan id
-                document.getElementById("days").innerHTML = days.toString().padStart(2, '0');
-                document.getElementById("hours").innerHTML = hours.toString().padStart(2, '0');
-                document.getElementById("minutes").innerHTML = minutes.toString().padStart(2, '0');
-                document.getElementById("seconds").innerHTML = seconds.toString().padStart(2, '0');
-
-                // Log untuk debugging (bisa dihapus di produksi)
-                // console.log(`Server time: ${new Date(serverCurrentTime + elapsed).toLocaleString()}, Target: ${new Date(serverTargetTime).toLocaleString()}, Distance: ${distance}ms`);
+                document.getElementById("days").innerHTML = Math.max(0, days).toString().padStart(2, '0');
+                document.getElementById("hours").innerHTML = Math.max(0, hours).toString().padStart(2, '0');
+                document.getElementById("minutes").innerHTML = Math.max(0, minutes).toString().padStart(2, '0');
+                document.getElementById("seconds").innerHTML = Math.max(0, seconds).toString().padStart(2, '0');
 
                 // Jika countdown selesai
-                if (distance < 0) {
+                if (distance <= 0) {
                     clearInterval(countdownInterval);
                     document.getElementById("countdown").innerHTML =
                         '<div class="col-span-4 py-3 bg-emerald-100 rounded-lg">' +
