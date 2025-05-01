@@ -431,14 +431,6 @@ def get_schedule_status():
                 next_schedule['mulai_obj'] = mulai
                 next_schedule['berakhir_obj'] = berakhir
 
-    # Menambahkan debug info untuk diagnosa masalah
-    if next_schedule:
-        next_schedule['debug_info'] = {
-            'now': now.strftime('%Y-%m-%d %H:%M:%S %Z'),
-            'mulai': next_schedule['mulai_obj'].strftime('%Y-%m-%d %H:%M:%S %Z'),
-            'berakhir': next_schedule['berakhir_obj'].strftime('%Y-%m-%d %H:%M:%S %Z'),
-        }
-
     return form_aktif, next_schedule
 
 @app.template_filter('format_datetime')

@@ -282,12 +282,6 @@
                     <input type="hidden" id="server-target-time" data-value="{{ server_target_timestamp }}">
                     <input type="hidden" id="server-current-time" data-value="{{ server_current_timestamp }}">
 
-                    <!-- Tambahkan debugging info (hapus di produksi) -->
-                    <div class="col-span-4 text-xs text-gray-500 mb-2" style="display: none;">
-                        <p>Server time: {{ debug_info.server_time }}</p>
-                        <p>Target time: {{ debug_info.target_time }}</p>
-                    </div>
-
                     <div class="bg-white shadow-sm rounded-lg p-2">
                         <div class="text-lg font-bold text-emerald-600" id="days">00</div>
                         <div class="text-xs text-gray-500">Hari</div>
