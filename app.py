@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory, jsonify, send_file
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file
 import pandas as pd
 from datetime import datetime
 import os
@@ -8,6 +8,7 @@ from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2 import service_account
 import io
 from dotenv import load_dotenv
+import requests
 
 app = Flask(__name__)
 secret_key = os.urandom(24)  # Generate a random secret key for session management
@@ -41,6 +42,10 @@ FILE_NAME_SISWA = 'data_siswa.xlsx'
 CACHE_DIR = '/tmp/cache' if os.getenv('VERCEL') else './cache'
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+GIST_ID = os.getenv("GIST_ID")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+GIST_FILENAME = "schedule.json"
+
 
 # Fungsi autentikasi ke Google Drive
 def authenticate_google_drive():
@@ -48,7 +53,6 @@ def authenticate_google_drive():
         CREDENTIALS_FILE, scopes=SCOPES
     )
     return build('drive', 'v3', credentials=creds)
-
 
 # Fungsi mendapatkan file ID dari nama file & folder
 def get_file_id(service, folder_id, file_name):
@@ -319,19 +323,46 @@ def cek_kelulusan():
                               server_current_timestamp=server_current_timestamp,
                               server_target_timestamp=server_target_timestamp)
 
-SCHEDULE_FILE = '/tmp/schedule.json' if os.getenv('VERCEL') else 'schedule.json'
-
 def load_schedule():
-    if not os.path.exists(SCHEDULE_FILE):
+    url = f"https://api.github.com/gists/{GIST_ID}"
+    headers = {"Authorization": f"token {GITHUB_TOKEN}"}
+    response = requests.get(url, headers=headers)
+
+    if response.status_code != 200:
+        print("Gagal mengambil jadwal:", response.status_code)
         return []
-    with open(SCHEDULE_FILE, 'r') as f:
-        return json.load(f)
+
+    gist_data = response.json()
+    file_content = gist_data["files"].get(GIST_FILENAME, {}).get("content", "[]")
+
+    try:
+        return json.loads(file_content)
+    except json.JSONDecodeError:
+        return []
 
 def save_schedule(schedule_baru):
     schedule = load_schedule()
     schedule.append(schedule_baru)
-    with open(SCHEDULE_FILE, 'w') as f:
-        json.dump(schedule, f, indent=4)
+
+    updated_content = json.dumps(schedule, indent=4)
+
+    url = f"https://api.github.com/gists/{GIST_ID}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    data = {
+        "files": {
+            GIST_FILENAME: {
+                "content": updated_content
+            }
+        }
+    }
+
+    response = requests.patch(url, headers=headers, json=data)
+    if response.status_code != 200:
+        print("Gagal menyimpan jadwal:", response.status_code)
 
 @app.route("/admin/schedule", methods=["GET", "POST"])
 def atur_schedule():
@@ -357,31 +388,45 @@ def hapus_schedule(index):
     schedule = load_schedule()
     if 0 <= index < len(schedule):
         del schedule[index]
-        with open(SCHEDULE_FILE, 'w') as f:
-            json.dump(schedule, f, indent=4)
+
+        # Simpan ulang ke Gist
+        updated_content = json.dumps(schedule, indent=4)
+        url = f"https://api.github.com/gists/{GIST_ID}"
+        headers = {
+            "Authorization": f"token {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github+json"
+        }
+        data = {
+            "files": {
+                GIST_FILENAME: {
+                    "content": updated_content
+                }
+            }
+        }
+        requests.patch(url, headers=headers, json=data)
+
     return redirect(url_for("atur_schedule"))
 
 def get_schedule_status():
-    with open('schedule.json') as f:
-        data = json.load(f)
+    data = load_schedule()
     now = datetime.now()
     form_aktif = None
     next_schedule = None
+
     for schedule in data:
         mulai = datetime.strptime(schedule['mulai'], '%Y-%m-%dT%H:%M')
         berakhir = datetime.strptime(schedule['berakhir'], '%Y-%m-%dT%H:%M')
         if mulai <= now <= berakhir:
             form_aktif = schedule
-            # Convert datetime objects to strings for template
             form_aktif['mulai_obj'] = mulai
             form_aktif['berakhir_obj'] = berakhir
             break
         elif now < mulai:
             if not next_schedule or mulai < datetime.strptime(next_schedule['mulai'], '%Y-%m-%dT%H:%M'):
                 next_schedule = schedule
-                # Convert datetime objects to strings for template
                 next_schedule['mulai_obj'] = mulai
                 next_schedule['berakhir_obj'] = berakhir
+
     return form_aktif, next_schedule
 
 @app.template_filter('format_datetime')
