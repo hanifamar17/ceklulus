@@ -319,7 +319,7 @@ def cek_kelulusan():
                               server_current_timestamp=server_current_timestamp,
                               server_target_timestamp=server_target_timestamp)
 
-SCHEDULE_FILE = 'schedule.json'
+SCHEDULE_FILE = '/tmp/schedule.json' if os.getenv('VERCEL') else 'schedule.json'
 
 def load_schedule():
     if not os.path.exists(SCHEDULE_FILE):
