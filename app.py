@@ -8,12 +8,14 @@ from google.oauth2 import service_account
 import io
 from dotenv import load_dotenv
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime, timezone as dt_timezone
 from pytz import timezone
 
 app = Flask(__name__)
 secret_key = os.urandom(24)  # Generate a random secret key for session management
 app.secret_key = secret_key
+
+os.environ['TZ'] = 'Asia/Jakarta'
 
 # Load .env jika dijalankan secara lokal
 if os.getenv("VERCEL") is None:  # Deteksi bukan di Vercel
@@ -366,12 +368,18 @@ def save_schedule(schedule_baru):
 @app.route("/admin/schedule", methods=["GET", "POST"])
 def atur_schedule():
     if request.method == "POST":
-        mulai = request.form.get("mulai")       # format: "2025-05-01T20:15"
+        mulai = request.form.get("mulai")
         berakhir = request.form.get("berakhir")
         keterangan = request.form.get("keterangan")
         
-        # Gunakan langsung input 'mulai' sebagai 'waktu_input'
-        waktu_input = mulai
+        # Pastikan waktu selalu dalam timezone Asia/Jakarta
+        jakarta_tz = timezone('Asia/Jakarta')
+        
+        # Get UTC time first, then convert to Jakarta time
+        utc_now = datetime.now(timezone('UTC'))
+        jakarta_now = utc_now.astimezone(jakarta_tz)
+        
+        waktu_input = jakarta_now.strftime("%Y-%m-%d %H:%M:%S %Z")
         
         save_schedule({
             "mulai": mulai,
@@ -457,6 +465,36 @@ def format_datetime(value):
         dt = value
         
     return f"{dt.day} {bulan[dt.strftime('%m')]} {dt.year} {dt.strftime('%H:%M')} WIB"
+
+@app.route("/timezone-check")
+def timezone_check():
+    """
+    Helper endpoint to check timezone settings on the server
+    """
+    # Check system timezone
+    import time
+    system_tz = time.tzname
+    
+    # Get UTC time
+    utc_now = datetime.now(timezone('UTC'))
+    
+    # Get Jakarta time
+    jakarta_now = datetime.now(timezone('Asia/Jakarta'))
+    
+    # Get current time without timezone (will use system timezone)
+    system_now = datetime.now()
+    
+    return {
+        "system_timezone": system_tz,
+        "utc_time": utc_now.strftime("%Y-%m-%d %H:%M:%S %Z"),
+        "jakarta_time": jakarta_now.strftime("%Y-%m-%d %H:%M:%S %Z"),
+        "system_time": system_now.strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp_comparison": {
+            "utc_timestamp": int(utc_now.timestamp()),
+            "jakarta_timestamp": int(jakarta_now.timestamp()),
+            "system_timestamp": int(system_now.timestamp())
+        }
+    }
 
 
 # Fungsi untuk memulai cache
