@@ -14,6 +14,10 @@ secret_key = os.urandom(24)  # Generate a random secret key for session manageme
 app.secret_key = secret_key
 load_dotenv()
 
+# Buat file credentials.json dari ENV
+with open("credentials.json", "w") as f:
+    f.write(os.getenv("CREDENTIALS_JSON"))
+    
 CREDENTIALS_FILE = 'credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 FOLDER_ID_SISWA = os.getenv('FOLDER_ID_SISWA') 

@@ -1,3 +1,0 @@
-Flask
-pandas
-gspread oauth2client pandas
