@@ -12,19 +12,34 @@ from dotenv import load_dotenv
 app = Flask(__name__)
 secret_key = os.urandom(24)  # Generate a random secret key for session management
 app.secret_key = secret_key
-load_dotenv()
+
+# Load .env jika dijalankan secara lokal
+if os.getenv("VERCEL") is None:  # Deteksi bukan di Vercel
+    from dotenv import load_dotenv
+    load_dotenv()
 
 # Buat file credentials.json dari ENV
-with open("credentials.json", "w") as f:
-    f.write(os.getenv("CREDENTIALS_JSON"))
+credentials_json = os.getenv("CREDENTIALS_JSON")
+
+if credentials_json:
+    # Tentukan lokasi file yang bisa ditulis (di Vercel /tmp)
+    CREDENTIALS_FILE = '/tmp/credentials.json' if os.getenv('VERCEL') else 'credentials.json'
     
-CREDENTIALS_FILE = 'credentials.json'
+    # Menulis file credentials.json (di /tmp jika di Vercel)
+    with open(CREDENTIALS_FILE, 'w') as f:
+        f.write(credentials_json)
+else:
+    raise EnvironmentError("CREDENTIALS_JSON tidak ditemukan dalam environment variables")
+
+# SCOPES dan folder_id diambil dari ENV
 SCOPES = ['https://www.googleapis.com/auth/drive.readonly']
 FOLDER_ID_SISWA = os.getenv('FOLDER_ID_SISWA') 
 FOLDER_ID_SURAT = os.getenv('FOLDER_ID_SURAT')
 FILE_NAME_SISWA = 'data_siswa.xlsx'
-CACHE_DIR = './cache'  # Folder untuk cache lokal
-os.makedirs(CACHE_DIR, exist_ok=True) 
+
+# Tentukan cache direktori, pastikan di /tmp di Vercel
+CACHE_DIR = '/tmp/cache' if os.getenv('VERCEL') else './cache'
+os.makedirs(CACHE_DIR, exist_ok=True)
 
 
 # Fungsi autentikasi ke Google Drive
