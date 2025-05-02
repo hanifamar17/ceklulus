@@ -343,10 +343,16 @@
                     Nurul Ummah. Semoga prestasi ini menjadi awal dari kesuksesan Anda di masa depan.</p>
                 <p class="mt-2 text-xs text-gray-500">Silakan mengikuti proses pengambilan ijazah pada tanggal 10-15 Mei
                     2025.</p>
+                {% if data.status_skl == 'LULUS' %}
                 <a href="#" onclick="downloadFile('{{ data.file_pdf }}', this)"
                     class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4 download-link">
-                    Unduh pengumuman (PDF)
+                    Unduh Surat Keterangan Lulus (PDF)
                 </a>
+                {% else %}
+                <p class="text-red-500 mt-4">
+                    <span class="font-medium">Surat Keterangan Lulus belum tersedia.</span> Silakan hubungi TU!
+                </p>
+                {% endif %}
             </div>
 
             <!-- Tombol Kembali -->
@@ -397,11 +403,16 @@
                 <p class="mt-2 text-xs text-gray-500">Silakan menghubungi Bapak/Ibu wali kelas untuk konsultasi pada
                     tanggal 5 Mei 2025.</p>
 
+                {% if data.status_skl == 'LULUS' %}
                 <a href="#" onclick="downloadFile('{{ data.file_pdf }}', this)"
                     class="inline-block text-emerald-500 hover:text-emerald-600 transition-colors mt-4 download-link">
-                    Unduh pengumuman (PDF)
+                    Unduh Surat Keterangan Lulus (PDF)
                 </a>
-
+                {% else %}
+                <p class="text-red-500 mt-4">
+                    <span class="font-medium">Surat Keterangan Lulus belum tersedia.</span> Silakan hubungi TU!
+                </p>
+                {% endif %}
             </div>
 
             <!-- Tombol Kembali -->

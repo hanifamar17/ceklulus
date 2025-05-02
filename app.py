@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 import requests
 from datetime import datetime
 from pytz import timezone
+from dateutil.parser import isoparse
+from dateutil import parser
 
 app = Flask(__name__)
 secret_key = os.urandom(24)  # Generate a random secret key for session management
@@ -63,6 +65,7 @@ def get_file_id(service, folder_id, file_name):
     return items[0]['id'] if items else None
 
 # Fungsi untuk memuat data siswa dan menyimpan ke cache
+# Fungsi untuk memuat data siswa dan menyimpan ke cache
 def load_student_data_from_drive():
     try:
         # Nama file yang digunakan untuk cache
@@ -88,15 +91,12 @@ def load_student_data_from_drive():
             if not file_id:
                 print("File tidak ditemukan di folder siswa.")
                 return pd.DataFrame()
-
             request = service.files().get_media(fileId=file_id)
             fh = io.BytesIO()
             downloader = MediaIoBaseDownload(fh, request)
-
             done = False
             while not done:
                 status, done = downloader.next_chunk()
-
             fh.seek(0)
             try:
                 # Baca langsung dari stream untuk file yang diunduh
@@ -104,15 +104,12 @@ def load_student_data_from_drive():
             except Exception as e:
                 print(f"Error reading downloaded file: {e}")
                 return pd.DataFrame()  # Mengembalikan DataFrame kosong jika gagal membaca file
-
             # Simpan file yang diunduh ke cache
             with open(cached_file_path, 'wb') as f:
                 f.write(fh.getvalue())  # Pastikan menggunakan getvalue() untuk menulis ke file
             print(f"File {FILE_NAME_SISWA} berhasil diunduh dan disimpan di cache.")
-
         # Cek kolom yang ada di DataFrame
         print(f"Kolom yang ditemukan di file: {df.columns.tolist()}")
-
         # Normalisasi kolom jika ada
         if 'nisn' in df.columns:
             df['nisn'] = df['nisn'].astype(str).str.strip()
@@ -120,9 +117,10 @@ def load_student_data_from_drive():
             df['tanggal_lahir'] = pd.to_datetime(df['tanggal_lahir'], errors='coerce').dt.strftime('%Y-%m-%d')
         if 'status_kelulusan' in df.columns:
             df['status_kelulusan'] = df['status_kelulusan'].str.upper().str.strip()
-
+        # Tambahkan normalisasi untuk kolom status_skl
+        if 'status_skl' in df.columns:
+            df['status_skl'] = df['status_skl'].str.upper().str.strip()
         return df
-
     except Exception as e:
         print(f"Error loading student data: {e}")
         return pd.DataFrame()
@@ -231,18 +229,13 @@ def cek_kelulusan():
         tanggal_lahir_str = request.form['tanggal_lahir']
         
         try:
-            # Konversi input tanggal lahir dari format YYYY-MM-DD (HTML date input)
-            # ke format yang cocok untuk perbandingan dengan data
+            # Konversi input tanggal lahir dari form HTML (YYYY-MM-DD)
             tanggal_lahir_obj = datetime.strptime(tanggal_lahir_str, '%Y-%m-%d')
-            tanggal_lahir_formatted = tanggal_lahir_obj.strftime('%Y-%m-%d')
+            tanggal_lahir_formatted = tanggal_lahir_obj.strftime('%Y-%m-%d')  # Normalisasi ke format YYYY-MM-D
             
-            # Load data siswa dari Excel
+            # Load data siswa dari Excel/Drive
             df = load_student_data_from_drive()
-            
-            # Pastikan format tanggal lahir di database konsisten
-            if not df.empty and 'tanggal_lahir' in df.columns:
-                df['tanggal_lahir'] = pd.to_datetime(df['tanggal_lahir']).dt.strftime('%Y-%m-%d')
-            
+          
             # Cari siswa berdasarkan NISN
             siswa = df[df['nisn'] == nisn]
             
@@ -250,19 +243,26 @@ def cek_kelulusan():
                 # Ambil data siswa pertama yang cocok dengan NISN
                 data_siswa = siswa.iloc[0].to_dict()
                 
-                # Periksa apakah tanggal lahir cocok
+                # PERUBAHAN: Langsung gunakan tanggal_lahir dari spreadsheet untuk perbandingan
                 tanggal_siswa = data_siswa['tanggal_lahir']
-                tanggal_siswa_obj = datetime.strptime(tanggal_siswa, '%Y-%m-%d')
                 
-                # Format tanggal untuk ditampilkan dengan format Indonesia
-                data_siswa['tanggal_lahir_format'] = tanggal_siswa_obj.strftime('%d %B %Y')
+                # Parsing tanggal dari spreadsheet secara fleksibel
+                try:
+                    tanggal_siswa_obj = parser.parse(tanggal_siswa)
+                    tanggal_siswa_formatted = tanggal_siswa_obj.strftime('%Y-%m-%d')  # Normalisasi
+                    data_siswa['tanggal_lahir_format'] = tanggal_siswa_obj.strftime('%d %B %Y')  # Untuk ditampilkan
+                except Exception as e:
+                    print(f"Error parsing tanggal dari spreadsheet: {e}")
+                    tanggal_siswa_formatted = tanggal_siswa  # Fallback pakai string asli
+                    data_siswa['tanggal_lahir_format'] = tanggal_siswa
+
                 
-                # Cek kecocokan tanggal lahir (hanya compare tahun, bulan, dan hari)
-                if tanggal_siswa_obj.year == tanggal_lahir_obj.year and \
-                   tanggal_siswa_obj.month == tanggal_lahir_obj.month and \
-                   tanggal_siswa_obj.day == tanggal_lahir_obj.day:
-                    
-                    # Render halaman hasil sesuai status kelulusan
+                # PERUBAHAN: Debug untuk melihat format tanggal
+                print(f"Membandingkan tanggal: input={tanggal_lahir_formatted}, database={tanggal_siswa}")
+                
+                # PERUBAHAN: Bandingkan string tanggal secara langsung
+                if tanggal_lahir_formatted == tanggal_siswa_formatted:
+                    # Tanggal cocok, lanjutkan ke pengecekan status kelulusan
                     if data_siswa['status_kelulusan'].upper() == 'LULUS':
                         return render_template('index.html', 
                                             hasil='lulus', 
@@ -282,6 +282,9 @@ def cek_kelulusan():
                                             server_current_timestamp=server_current_timestamp,
                                             server_target_timestamp=server_target_timestamp)
                 else:
+                    # PERUBAHAN: Menambahkan debug info
+                    print(f"Ketidakcocokan tanggal: Input={tanggal_lahir_formatted}, Database={tanggal_siswa}")
+                    
                     # Tanggal lahir tidak cocok
                     return render_template('index.html', 
                                         hasil=None, 
@@ -370,15 +373,26 @@ def atur_schedule():
         utc_now = datetime.now(timezone('UTC'))
         jakarta_now = utc_now.astimezone(jakarta_tz)
         
-        waktu_input = jakarta_now.strftime("%Y-%m-%d %H:%M:%S %Z")
+        # Saat form POST
+        mulai_str = request.form.get("mulai")  # string format: '2025-05-05T07:00'
+        berakhir_str = request.form.get("berakhir")
         
+        # Konversi ke timezone-aware datetime, hanya jika masih naive
+        mulai_dt = datetime.strptime(mulai_str, "%Y-%m-%dT%H:%M")
+        berakhir_dt = datetime.strptime(berakhir_str, "%Y-%m-%dT%H:%M")
+
+        if mulai_dt.tzinfo is None:
+            mulai_dt = jakarta_tz.localize(mulai_dt)
+        if berakhir_dt.tzinfo is None:
+            berakhir_dt = jakarta_tz.localize(berakhir_dt)
+        
+        # Simpan dalam ISO format dengan offset (misalnya '2025-05-05T07:00:00+07:00')
         save_schedule({
-            "mulai": mulai,
-            "berakhir": berakhir,
+            "mulai": mulai_dt.isoformat(),
+            "berakhir": berakhir_dt.isoformat(),
             "keterangan": keterangan,
-            "waktu_input": waktu_input
+            "waktu_input": jakarta_now.strftime("%Y-%m-%d %H:%M:%S %Z")
         })
-        return redirect(url_for("atur_schedule"))
         
     schedule = load_schedule()
     return render_template("schedule.html", schedule=schedule)
@@ -407,19 +421,21 @@ def hapus_schedule(index):
 
     return redirect(url_for("atur_schedule"))
 
+
+# Definisikan timezone Asia/Jakarta
+tz = timezone('Asia/Jakarta')
+
 def get_schedule_status():
-    tz = timezone('Asia/Jakarta')  # atur timezone ke WIB
-    now = datetime.now(tz)  # Explicitly use Jakarta timezone
+    now = datetime.now(tz)
 
     data = load_schedule()
     form_aktif = None
     next_schedule = None
 
     for schedule in data:
-        mulai = tz.localize(datetime.strptime(schedule['mulai'], '%Y-%m-%dT%H:%M'))
-        berakhir = tz.localize(datetime.strptime(schedule['berakhir'], '%Y-%m-%dT%H:%M'))
+        mulai = isoparse(schedule['mulai']).astimezone(tz)
+        berakhir = isoparse(schedule['berakhir']).astimezone(tz)
 
-        # Menambahkan logika jika sekarang lebih kecil dari waktu mulai
         if mulai <= now <= berakhir:
             form_aktif = schedule
             form_aktif['mulai_obj'] = mulai
@@ -441,13 +457,12 @@ def format_datetime(value):
         "07": "Juli", "08": "Agustus", "09": "September",
         "10": "Oktober", "11": "November", "12": "Desember"
     }
-    
-    # Handle both datetime object and string inputs
+
     if isinstance(value, str):
-        dt = datetime.strptime(value, '%Y-%m-%dT%H:%M')
+        dt = isoparse(value)  # Gunakan isoparse untuk string ISO
     else:
         dt = value
-        
+
     return f"{dt.day} {bulan[dt.strftime('%m')]} {dt.year} {dt.strftime('%H:%M')} WIB"
 
 # Fungsi untuk memulai cache
